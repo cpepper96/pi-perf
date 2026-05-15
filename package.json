@@ -1,0 +1,37 @@
+{
+  "name": "pi-perf",
+  "version": "0.1.0",
+  "description": "Per-turn perf timings (TTFT, prefill tok/s, decode tok/s) for pi.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "perf",
+    "benchmark",
+    "ttft",
+    "tokens-per-second"
+  ],
+  "license": "MIT",
+  "author": "Jerod Culpepper",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cpepper96/pi-perf.git"
+  },
+  "homepage": "https://github.com/cpepper96/pi-perf#readme",
+  "bugs": {
+    "url": "https://github.com/cpepper96/pi-perf/issues"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/pi-perf.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "files": [
+    "extensions",
+    "README.md",
+    "LICENSE"
+  ]
+}
