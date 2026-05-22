@@ -33,5 +33,10 @@
     "extensions",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.73.1",
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
 }

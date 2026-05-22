@@ -39,6 +39,16 @@ interface TurnStat {
 	totalMs: number;
 }
 
+interface Aggregate {
+	n: number;          // turn count
+	input: number;      // sum
+	cacheWrite: number; // sum
+	output: number;     // sum
+	ttftMs: number;     // sum
+	decodeMs: number;   // sum
+	totalMs: number;    // sum
+}
+
 const DEFAULT_RECENT = 10;
 const HISTORY_CAP = 1000;
 
@@ -67,6 +77,66 @@ const fmt = (s: TurnStat) =>
 	`prefill ${r(prefillTps(s))} tok/s  ` +
 	`decode ${r(decodeTps(s), 1)} tok/s  ` +
 	`total ${secs(s.totalMs)}`;
+
+function computeStat({
+	model,
+	usage,
+	turnStart,
+	firstTokenAt,
+	turnEnd,
+}: {
+	model: string;
+	usage: { input?: number; cacheRead?: number; cacheWrite?: number; output?: number };
+	turnStart: number;
+	firstTokenAt: number;
+	turnEnd: number;
+}): TurnStat {
+	return {
+		model,
+		input: usage.input ?? 0,
+		cacheRead: usage.cacheRead ?? 0,
+		cacheWrite: usage.cacheWrite ?? 0,
+		output: usage.output ?? 0,
+		ttftMs: firstTokenAt - turnStart,
+		decodeMs: turnEnd - firstTokenAt,
+		totalMs: turnEnd - turnStart,
+	};
+}
+
+function aggregateByModel(history: readonly TurnStat[]): Map<string, Aggregate> {
+	const m = new Map<string, Aggregate>();
+
+	for (const turn of history) {
+		const a = m.get(turn.model) ?? {
+			n: 0,
+			input: 0,
+			cacheWrite: 0,
+			output: 0,
+			ttftMs: 0,
+			decodeMs: 0,
+			totalMs: 0,
+		};
+
+		a.n += 1;
+		a.input += turn.input;
+		a.cacheWrite += turn.cacheWrite;
+		a.output += turn.output;
+		a.ttftMs += turn.ttftMs;
+		a.decodeMs += turn.decodeMs;
+		a.totalMs += turn.totalMs;
+
+		m.set(turn.model, a);
+	}
+	return m;
+}
+
+function formatRecent(history: readonly TurnStat[], n: number): string[] {
+	const recentTurns = history.slice(-n);
+	return [
+		`Recent turns (last ${recentTurns.length}):`,
+		...recentTurns.map((s) => `  ${fmt(s)}  [${s.model}]`),
+	];
+}
 
 export default function (pi: ExtensionAPI) {
 	let turnStart = 0;
@@ -110,7 +180,7 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("turn_end", async (event, ctx) => {
-		const end = performance.now();
+		const turnEnd = performance.now();
 		const msg = event.message;
 		if (!msg || msg.role !== "assistant" || !msg.usage || !firstTokenAt) {
 			ctx.ui.setStatus("perf", undefined);
@@ -118,16 +188,14 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 
-		const stat: TurnStat = {
+		const stat = computeStat({
 			model: ctx.model?.id ?? msg.model ?? "unknown",
-			input: msg.usage.input ?? 0,
-			cacheRead: msg.usage.cacheRead ?? 0,
-			cacheWrite: msg.usage.cacheWrite ?? 0,
-			output: msg.usage.output ?? 0,
-			ttftMs: firstTokenAt - turnStart,
-			decodeMs: end - firstTokenAt,
-			totalMs: end - turnStart,
-		};
+			usage: msg.usage,
+			turnStart,
+			firstTokenAt,
+			turnEnd,
+		});
+
 		pushStat(stat);
 		ctx.ui.setStatus("perf", ctx.ui.theme.fg("dim", fmt(stat)));
 		reset();
@@ -191,42 +259,10 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			const lines: string[] = [];
-			lines.push(`Recent turns (last ${Math.min(recent, history.length)}):`);
-			for (const s of history.slice(-recent)) lines.push(`  ${fmt(s)}  [${s.model}]`);
+			const lines = formatRecent(history, recent);
 
 			// Per-model session aggregates.
-			const byModel = new Map<
-				string,
-				{
-					n: number;
-					input: number;
-					cacheWrite: number;
-					output: number;
-					ttftMs: number;
-					decodeMs: number;
-					totalMs: number;
-				}
-			>();
-			for (const s of history) {
-				const a = byModel.get(s.model) ?? {
-					n: 0,
-					input: 0,
-					cacheWrite: 0,
-					output: 0,
-					ttftMs: 0,
-					decodeMs: 0,
-					totalMs: 0,
-				};
-				a.n += 1;
-				a.input += s.input;
-				a.cacheWrite += s.cacheWrite;
-				a.output += s.output;
-				a.ttftMs += s.ttftMs;
-				a.decodeMs += s.decodeMs;
-				a.totalMs += s.totalMs;
-				byModel.set(s.model, a);
-			}
+			const byModel = aggregateByModel(history);
 
 			lines.push("");
 			lines.push("Session averages:");
