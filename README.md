@@ -1,6 +1,6 @@
-# pi-perf
+# pi-speedometer
 
-Per-turn perf timings for [pi](https://pi.dev): TTFT, prefill tok/s, decode tok/s, and total wall time.
+A per-turn speedometer for [pi](https://pi.dev): TTFT, prefill tok/s, decode tok/s, and total wall time.
 
 Pi's built-in footer already shows tokens, cache, cost, context, and model. This extension surfaces the *timing* numbers it doesn't show.
 
@@ -8,26 +8,26 @@ Pi's built-in footer already shows tokens, cache, cost, context, and model. This
 
 After each turn, pi's status area shows:
 
-```
+```txt
 ttft 1967ms  prefill 412 tok/s  decode 63.8 tok/s  total 14.2s
 ```
 
 ## Commands
 
-- `/perf` — show recent turns and per-model session averages
-- `/perf clear` — reset history
-- `/perf csv` — dump full history to `~/.pi/pi-perf-<timestamp>.csv`
+- `/speed` — show recent turns and per-model session averages
+- `/speed clear` — reset history
+- `/speed csv` — dump full history to `~/.pi/pi-speedometer-<timestamp>.csv`
 
 ## Install
 
 ```bash
-pi install npm:pi-perf
+pi install npm:pi-speedometer
 ```
 
 Or try it without installing:
 
 ```bash
-pi -e npm:pi-perf
+pi -e npm:pi-speedometer
 ```
 
 ## How it's measured

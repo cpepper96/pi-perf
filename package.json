@@ -1,13 +1,13 @@
 {
-  "name": "pi-perf",
+  "name": "pi-speedometer",
   "version": "0.1.0",
-  "description": "Per-turn perf timings (TTFT, prefill tok/s, decode tok/s) for pi.",
+  "description": "Per-turn speedometer for pi: TTFT, prefill tok/s, decode tok/s, and total wall time.",
   "type": "module",
   "keywords": [
     "pi-package",
     "pi-extension",
-    "perf",
-    "benchmark",
+    "speedometer",
+    "latency",
     "ttft",
     "tokens-per-second"
   ],
@@ -15,15 +15,15 @@
   "author": "Jerod Culpepper",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cpepper96/pi-perf.git"
+    "url": "git+https://github.com/cpepper96/pi-speedometer.git"
   },
-  "homepage": "https://github.com/cpepper96/pi-perf#readme",
+  "homepage": "https://github.com/cpepper96/pi-speedometer#readme",
   "bugs": {
-    "url": "https://github.com/cpepper96/pi-perf/issues"
+    "url": "https://github.com/cpepper96/pi-speedometer/issues"
   },
   "pi": {
     "extensions": [
-      "./extensions/pi-perf.ts"
+      "./extensions/pi-speedometer.ts"
     ]
   },
   "peerDependencies": {

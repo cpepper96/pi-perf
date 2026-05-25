@@ -1,5 +1,5 @@
 /**
- * pi-perf — display per-turn perf timings (TTFT, prefill tok/s, decode tok/s)
+ * pi-speedometer — display per-turn speed/timing metrics (TTFT, prefill tok/s, decode tok/s)
  *
  * Provider-agnostic; relies on standard pi events (turn_start, message_update,
  * turn_end) and the AssistantMessage.usage counts pi-ai already collects.
@@ -11,14 +11,14 @@
  *   ttft 1967ms  prefill 412 tok/s  decode 63.8 tok/s  total 14.2s
  *
  * Commands:
- *   /perf         show recent turns and per-model session averages
- *   /perf clear   reset history
- *   /perf csv     dump full history to ~/.pi/pi-perf-<timestamp>.csv
+ *   /speed         show recent turns and per-model session averages
+ *   /speed clear   reset history
+ *   /speed csv     dump full history to ~/.pi/pi-speedometer-<timestamp>.csv
  *
  * Install:
- *   pi install npm:pi-perf
+ *   pi install npm:pi-speedometer
  * Or try without installing:
- *   pi -e npm:pi-perf
+ *   pi -e npm:pi-speedometer
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -157,11 +157,11 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (_e, ctx) => {
 		history.length = 0;
 		reset();
-		ctx.ui.setStatus("perf", undefined);
+		ctx.ui.setStatus("speedometer", undefined);
 	});
 
 	pi.on("session_shutdown", async (_e, ctx) => {
-		ctx.ui.setStatus("perf", undefined);
+		ctx.ui.setStatus("speedometer", undefined);
 	});
 
 	pi.on("turn_start", async () => {
@@ -183,7 +183,7 @@ export default function (pi: ExtensionAPI) {
 		const turnEnd = performance.now();
 		const msg = event.message;
 		if (!msg || msg.role !== "assistant" || !msg.usage || !firstTokenAt) {
-			ctx.ui.setStatus("perf", undefined);
+			ctx.ui.setStatus("speedometer", undefined);
 			reset();
 			return;
 		}
@@ -197,20 +197,20 @@ export default function (pi: ExtensionAPI) {
 		});
 
 		pushStat(stat);
-		ctx.ui.setStatus("perf", ctx.ui.theme.fg("dim", fmt(stat)));
+		ctx.ui.setStatus("speedometer", ctx.ui.theme.fg("dim", fmt(stat)));
 		reset();
 	});
 
-	pi.registerCommand("perf", {
+	pi.registerCommand("speed", {
 		description:
-			"Per-turn perf timings (ttft, prefill/decode tok/s). Keeps last 1000 turns. Subcommands: <n>, clear, csv",
+			"Per-turn speed/timing metrics (ttft, prefill/decode tok/s). Keeps last 1000 turns. Subcommands: <n>, clear, csv",
 		handler: async (args, ctx) => {
 			const sub = (args ?? "").trim().toLowerCase();
 
 			if (sub === "clear") {
 				history.length = 0;
-				ctx.ui.setStatus("perf", undefined);
-				ctx.ui.notify("perf history cleared", "info");
+				ctx.ui.setStatus("speedometer", undefined);
+				ctx.ui.notify("speed history cleared", "info");
 				return;
 			}
 
@@ -235,7 +235,7 @@ export default function (pi: ExtensionAPI) {
 						r(decodeTps(s), 2),
 					].join(","),
 				);
-				const path = join(homedir(), ".pi", `pi-perf-${Date.now()}.csv`);
+				const path = join(homedir(), ".pi", `pi-speedometer-${Date.now()}.csv`);
 				mkdirSync(dirname(path), { recursive: true });
 				writeFileSync(path, [header, ...rows].join("\n") + "\n");
 				ctx.ui.notify(`Wrote ${history.length} turns to ${path}`, "info");
